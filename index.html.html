@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1000">
+<title>Le Mura di Pietra e di Sangue — Audiolibro</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg:        #0e0900;
+    --bg-mid:    #1a1000;
+    --bg-panel:  #120c00;
+    --gold:      #c8972a;
+    --gold-lt:   #e8b94a;
+    --gold-dim:  #7a5c18;
+    --gold-glow: rgba(200,151,42,0.18);
+    --rust:      #8b3a1a;
+    --cream:     #ede0b8;
+    --cream-dim: #a89060;
+    --ink:       #080500;
+    --border:    rgba(200,151,42,0.25);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%; width: 100%;
+    background: var(--bg);
+    font-family: 'IM Fell English', Georgia, serif;
+    color: var(--cream);
+    overflow: hidden;
+  }
+
+  /* Atmospheric background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 15% 50%,  rgba(200,151,42,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 85% 20%,  rgba(139,58,26,0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 60% 85%,  rgba(200,151,42,0.05) 0%, transparent 50%);
+  }
+
+  /* Grain overlay */
+  body::after {
+    content: ''; position: fixed; inset: -50%; width: 200%; height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; animation: grain 10s steps(8) infinite; opacity: 0.6;
+  }
+  @keyframes grain {
+    0%,100%{transform:translate(0,0)} 12%{transform:translate(-2%,-3%)} 25%{transform:translate(3%,1%)}
+    37%{transform:translate(-1%,2%)} 50%{transform:translate(2%,-1%)} 62%{transform:translate(-3%,3%)}
+    75%{transform:translate(1%,-2%)} 87%{transform:translate(-2%,1%)}
+  }
+
+  /* ── LAYOUT ── */
+  #app { position: fixed; inset: 0; display: flex; flex-direction: column; z-index: 1; }
+
+  /* ── HEADER ── */
+  #header {
+    flex-shrink: 0;
+    padding: 14px 52px 10px;
+    background: linear-gradient(180deg, rgba(5,3,0,0.96) 0%, rgba(8,5,0,0.75) 100%);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    position: relative;
+  }
+  .header-sword {
+    position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+    color: var(--gold-dim); font-size: 20px; opacity: 0.5;
+    animation: flicker-slow 4s ease-in-out infinite;
+  }
+  .btn-menu-top {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--gold-dim);
+    font-size: 24px; cursor: pointer; padding: 4px; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .title-main {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(11px, 3.2vw, 17px);
+    color: var(--gold);
+    letter-spacing: 0.07em; line-height: 1.2;
+    text-shadow: 0 0 24px rgba(200,151,42,0.35);
+  }
+  .title-sub {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(8px, 2.2vw, 11px);
+    color: var(--cream-dim);
+    letter-spacing: 0.14em; margin-top: 3px; font-style: italic;
+  }
+
+  /* ── CHAPTER PANEL ── */
+  #chapter-panel {
+    position: fixed; inset: 0; z-index: 100;
+    display: none; flex-direction: column;
+    background: rgba(4,2,0,0.97);
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  #chapter-panel.open { display: flex; animation: slideIn .22s ease; }
+  @keyframes slideIn { from{transform:translateX(-100%);opacity:0} to{transform:translateX(0);opacity:1} }
+
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: rgba(4,2,0,0.99); z-index: 1;
+  }
+  .panel-title { font-family: 'Cinzel', serif; color: var(--gold); font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; }
+  .btn-close {
+    background: none; border: 1px solid var(--gold-dim);
+    color: var(--gold); width: 34px; height: 34px; border-radius: 50%;
+    font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .ch-list { padding: 14px; display: flex; flex-direction: column; gap: 7px; }
+  .ch-item {
+    padding: 13px 15px; border: 1px solid rgba(200,151,42,0.18);
+    border-radius: 4px; cursor: pointer; transition: all .18s;
+    background: rgba(200,151,42,0.02); position: relative; overflow: hidden;
+  }
+  .ch-item:active { background: rgba(200,151,42,0.1); }
+  .ch-item.active { border-color: var(--gold); background: rgba(200,151,42,0.08); }
+  .ch-item.active::before { content:''; position:absolute; left:0;top:0;bottom:0; width:3px; background:var(--gold); }
+  .ch-item.has-audio::after {
+    content: '🔊'; position: absolute; right: 12px; top: 50%;
+    transform: translateY(-50%); font-size: 13px; opacity: 0.7;
+  }
+  .ci-num { font-family:'Cinzel',serif; font-size:9px; color:var(--gold-dim); letter-spacing:.2em; text-transform:uppercase; margin-bottom:3px; }
+  .ci-title { font-size:14px; color:var(--cream); line-height:1.3; }
+  .ci-year { font-size:10px; color:var(--cream-dim); font-style:italic; margin-top:2px; }
+  .ci-status { font-size:10px; color:var(--gold-dim); font-style:italic; margin-top:3px; }
+
+  /* ── READER ── */
+  #reader { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; }
+  #text-content { padding:22px 20px 40px; max-width:680px; margin:0 auto; min-height:100%; }
+
+  .ch-heading {
+    text-align:center; margin-bottom:26px; padding-bottom:18px;
+    border-bottom:1px solid rgba(200,151,42,0.18); position:relative;
+  }
+  .ch-heading::after {
+    content:'◆'; position:absolute; bottom:-9px; left:50%; transform:translateX(-50%);
+    color:var(--gold-dim); font-size:11px; background:var(--bg); padding:0 8px;
+  }
+  .ch-heading .lbl { font-family:'Cinzel',serif; font-size:10px; letter-spacing:.3em; color:var(--gold-dim); text-transform:uppercase; margin-bottom:7px; }
+  .ch-heading h1 { font-family:'Cinzel Decorative',serif; font-size:clamp(15px,4.8vw,23px); color:var(--gold); line-height:1.3; text-shadow:0 0 28px rgba(200,151,42,0.28); margin-bottom:5px; }
+  .ch-heading .yr { font-style:italic; color:var(--cream-dim); font-size:13px; }
+
+  .para {
+    font-size: clamp(16px, 4.2vw, 18px);
+    line-height: 1.88; color: var(--cream);
+    margin-bottom: 1.35em;
+    padding: 3px 5px; margin-left: -5px; margin-right: -5px;
+    border-radius: 3px; transition: background .25s, color .25s;
+  }
+  .para.speaking { background: rgba(200,151,42,0.13); color: #fff; }
+  .para.dialogue { color: #f0e4c0; padding-left: 14px; border-left: 1px solid rgba(200,151,42,0.28); }
+  .para.drop-cap::first-letter {
+    font-family: 'Cinzel Decorative', serif; font-size: 4em;
+    float: left; line-height: 0.75; padding-right: 7px; padding-top: 5px;
+    color: var(--gold); text-shadow: 0 0 18px rgba(200,151,42,0.45);
+  }
+
+  /* Audio-not-loaded notice per chapter */
+  .audio-missing-notice {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(200,151,42,0.06); border: 1px dashed var(--gold-dim);
+    border-radius: 5px; padding: 12px 14px; margin-bottom: 22px;
+    font-size: 13px; color: var(--cream-dim); font-style: italic; line-height: 1.5;
+  }
+  .audio-missing-notice .ico { font-size: 20px; flex-shrink: 0; }
+
+  /* ── PLAYER ── */
+  #player {
+    flex-shrink: 0;
+    background: linear-gradient(0deg, rgba(3,2,0,0.99) 0%, rgba(12,8,0,0.96) 100%);
+    border-top: 1px solid var(--border);
+    padding: 9px 14px 12px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  /* Progress */
+  .prog-wrap {
+    position: relative; height: 3px; background: rgba(200,151,42,0.12);
+    border-radius: 2px; margin-bottom: 10px; cursor: pointer;
+  }
+  #prog-bar {
+    height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    border-radius: 2px; width: 0%; transition: width .25s linear; position: relative;
+  }
+  #prog-bar::after {
+    content:''; position:absolute; right:-5px; top:-4px;
+    width:11px; height:11px; background:var(--gold); border-radius:50%;
+    box-shadow: 0 0 10px rgba(200,151,42,0.9);
+    opacity: 0; transition: opacity .2s;
+  }
+  .prog-wrap:hover #prog-bar::after { opacity: 1; }
+
+  /* Time */
+  .time-row { display:flex; justify-content:space-between; margin-bottom:8px; }
+  .time-txt { font-family:'Cinzel',serif; font-size:9px; letter-spacing:.1em; color:var(--gold-dim); }
+
+  /* Player row */
+  .player-row { display:flex; align-items:center; gap:10px; }
+  .p-info { flex:1; min-width:0; }
+  .p-lbl { font-family:'Cinzel',serif; font-size:8px; letter-spacing:.2em; color:var(--gold-dim); text-transform:uppercase; margin-bottom:2px; }
+  .p-title { font-size:12px; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-style:italic; }
+  .p-mode { font-size:10px; color:var(--gold-dim); margin-top:1px; font-style:italic; }
+
+  .controls { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .btn-c {
+    background:none; border:none; cursor:pointer;
+    color:var(--cream-dim); font-size:17px;
+    width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    transition: all .12s;
+  }
+  .btn-c:active { background:rgba(200,151,42,0.14); color:var(--gold); }
+
+  .btn-play {
+    width:50px; height:50px; border-radius:50%;
+    background: conic-gradient(var(--gold) var(--play-prog, 0%), rgba(200,151,42,0.15) 0%);
+    color:var(--ink); font-size:22px;
+    box-shadow: 0 0 22px rgba(200,151,42,0.28), 0 3px 10px rgba(0,0,0,0.55);
+    transition: all .15s; position: relative;
+  }
+  .btn-play::before {
+    content:''; position:absolute; inset:3px; border-radius:50%;
+    background: linear-gradient(135deg, #7a5c18, #c8972a);
+  }
+  .btn-play span { position:relative; z-index:1; }
+  .btn-play:active { transform:scale(0.92); }
+
+  .btn-spd {
+    background:none; border:1px solid var(--gold-dim);
+    color:var(--gold-dim); font-family:'Cinzel',serif;
+    font-size:9px; letter-spacing:.05em;
+    padding:4px 6px; border-radius:3px; cursor:pointer;
+    min-width:34px; height:auto; transition: all .15s;
+  }
+  .btn-spd:active { border-color:var(--gold); color:var(--gold); background:rgba(200,151,42,0.1); }
+
+  /* Playing dot */
+  .play-dot {
+    width:5px; height:5px; border-radius:50%; background:var(--gold);
+    box-shadow:0 0 7px var(--gold); flex-shrink:0;
+    display:none; animation:flicker 1.8s ease-in-out infinite;
+  }
+  .play-dot.on { display:block; }
+  @keyframes flicker { 0%,100%{opacity:1} 50%{opacity:.7} }
+  @keyframes flicker-slow { 0%,100%{opacity:.5} 50%{opacity:.8} }
+
+  /* ── SPLASH ── */
+  #splash {
+    position:fixed; inset:0; z-index:200;
+    background: radial-gradient(ellipse at 50% 40%, #1a1000 0%, #080500 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:40px 32px;
+    transition: opacity .6s, transform .6s;
+  }
+  #splash.out { opacity:0; pointer-events:none; transform:scale(.96); }
+
+  .sp-sword { font-size:52px; margin-bottom:20px; animation:glow-pulse 3s ease-in-out infinite; }
+  @keyframes glow-pulse {
+    0%,100%{text-shadow:0 0 20px rgba(200,151,42,.35)}
+    50%{text-shadow:0 0 45px rgba(200,151,42,.8),0 0 80px rgba(200,151,42,.25)}
+  }
+  .sp-title { font-family:'Cinzel Decorative',serif; font-size:clamp(19px,6vw,34px); color:var(--gold); line-height:1.22; margin-bottom:10px; text-shadow:0 0 30px rgba(200,151,42,.35); }
+  .sp-sub { font-family:'IM Fell English',serif; font-style:italic; color:var(--cream-dim); font-size:clamp(13px,3.8vw,16px); margin-bottom:6px; }
+  .sp-line { width:70px; height:1px; background:linear-gradient(90deg,transparent,var(--gold-dim),transparent); margin:16px auto; }
+  .sp-auth { font-family:'Cinzel',serif; letter-spacing:.22em; color:var(--gold-dim); font-size:clamp(10px,2.8vw,13px); margin-bottom:36px; text-transform:uppercase; }
+  .btn-start {
+    background:linear-gradient(135deg,var(--gold-dim),var(--gold));
+    color:var(--ink); border:none; font-family:'Cinzel',serif;
+    font-size:13px; letter-spacing:.2em; text-transform:uppercase;
+    padding:14px 38px; border-radius:3px; cursor:pointer;
+    box-shadow:0 0 30px rgba(200,151,42,.28),0 4px 14px rgba(0,0,0,.5);
+    transition: all .18s;
+  }
+  .btn-start:active { transform:scale(.95); }
+
+  /* Scrollbar */
+  #reader::-webkit-scrollbar{width:3px}
+  #reader::-webkit-scrollbar-track{background:transparent}
+  #reader::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sp-sword">⚔</div>
+  <div class="sp-title">Le Mura di Pietra<br>e di Sangue</div>
+  <div class="sp-sub">La storia di Milo, soldato di Montagnana</div>
+  <div class="sp-line"></div>
+  <div class="sp-auth">Denis &amp; Silvia</div>
+  <button class="btn-start" onclick="enterApp()">Inizia l'ascolto</button>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- CHAPTER PANEL -->
+  <div id="chapter-panel">
+    <div class="panel-head">
+      <span class="panel-title">⚔ Capitoli</span>
+      <button class="btn-close" onclick="togglePanel()">✕</button>
+    </div>
+    <div class="ch-list" id="ch-list"></div>
+  </div>
+
+  <!-- HEADER -->
+  <div id="header">
+    <button class="btn-menu-top" onclick="togglePanel()" aria-label="Menu capitoli">☰</button>
+    <div class="title-main">Le Mura di Pietra e di Sangue</div>
+    <div class="title-sub">Denis &amp; Silvia · XIII Secolo</div>
+    <div class="header-sword">⚔</div>
+  </div>
+
+  <!-- READER -->
+  <div id="reader">
+    <div id="text-content"></div>
+  </div>
+
+  <!-- PLAYER -->
+  <div id="player">
+    <div class="prog-wrap" id="prog-wrap" onclick="seekClick(event)">
+      <div id="prog-bar"></div>
+    </div>
+    <div class="time-row">
+      <span class="time-txt" id="time-cur">0:00</span>
+      <span class="time-txt" id="time-tot">--:--</span>
+    </div>
+    <div class="player-row">
+      <div class="p-info">
+        <div class="p-lbl">In ascolto</div>
+        <div class="p-title" id="p-title">Seleziona un capitolo</div>
+        <div class="p-mode" id="p-mode"></div>
+      </div>
+      <div class="play-dot" id="play-dot"></div>
+      <div class="controls">
+        <button class="btn-c" onclick="skip(-15)" title="−15s">⏪</button>
+        <button class="btn-c btn-play" id="btn-play" onclick="togglePlay()"><span id="play-icon">▶</span></button>
+        <button class="btn-c" onclick="skip(15)" title="+15s">⏩</button>
+        <button class="btn-c btn-spd" id="btn-spd" onclick="cycleSpeed()">1×</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<audio id="audio-el" preload="auto"></audio>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIGURATION — aggiorna questi percorsi con i tuoi file MP3
+// ═══════════════════════════════════════════════════════════
+/*
+  Struttura cartelle consigliata nel tuo repository GitHub:
+  
+  index.html          ← questo file
+  audio/
+    CAP00_premessa.mp3
+    CAP01_il_figlio_del_fabbro.mp3
+    CAP02_la_notte_di_fuoco.mp3
+    CAP03_il_tiranno.mp3
+    CAP04_la_resistenza.mp3
+    CAP05_le_mura_rinascono.mp3
+    CAP06_la_liberazione.mp3
+    CAP07_epilogo.mp3
+
+  Finché un file MP3 non è stato caricato, il capitolo usa
+  automaticamente la voce sintetizzata del browser come fallback.
+*/
+
+const AUDIO_BASE = 'https://archive.org/download/le-mura-di-pietra-e-di-sangue/';
+
+const CHAPTERS = [
+  {
+    id: -1, num: '', title: 'Copertina', year: '',
+    audio: 'Copertina.mp3',
+    paragraphs: [
+      {type:'prose',text:'Le Mura di Pietra e di Sangue. La storia di Milo, soldato di Montagnana. Di Denis e Silvia.'}
+    ]
+  },
+  {
+    id: 0, num: 'Premessa', title: 'Le pietre ricordano', year: '',
+    audio: 'Premessa.mp3',
+    paragraphs: [
+      {type:'prose',text:'Fermati, un attimo di respiro, accendi il sogno e rivedi armati, assedi e fughe notturne, agguati ed ingressi trionfanti.'}
+    ]
+  },
+  {
+    id: 1, num: 'Capitolo I', title: 'Il figlio del fabbro',
+    year: 'Montagnana, anno del Signore 1240',
+    audio: 'Il figlio del fabbro.mp3',
+    paragraphs: [
+      {type:'prose',text:"Il martello cadeva ritmico sull'incudine come il battito di un cuore antico, e Milo conosceva quel suono prima ancora di conoscere il proprio nome. Suo padre, Corrado, fabbro di mani grandi e schiena curva, aveva forgiato per trent'anni i ferri di cavallo, i chiodi, le lame da cucina e i cardini delle porte di mezza città."},
+      {type:'prose',text:"Milo aveva quattordici anni e un ciuffo di capelli scuri che nessun pettine riusciva a domare. Era magro come un ramo di salice, ma le braccia, già indurite dal lavoro del mantice e dall'aiuto quotidiano al padre, tradivano una forza che i coetanei gli invidiavano in silenzio. Aveva gli occhi chiari, del colore del cielo d'inverno, e uno sguardo che gli anziani del borgo dicevano essere troppo serio per un ragazzo della sua età."},
+      {type:'dialogue',text:"— Milo! — chiamò Corrado dalla bottega, senza alzare gli occhi dal ferro. — Hai portato l'acqua?"},
+      {type:'dialogue',text:'— Arrivo, padre.'},
+      {type:'prose',text:"Il ragazzo sollevò il secchio dal pozzo nel cortile e lo trascinò dentro, dove il calore del fuoco trasformava l'aria in qualcosa di quasi solido. La bottega era piccola ma ordinata: gli attrezzi appesi alle pareti con cura certosina, i pezzi finiti allineati su una mensola di quercia, le braci sempre vive nel grande focolare centrale."},
+      {type:'prose',text:"Corrado prese il secchio senza una parola e lo usò per temperare il ferro. Un sibilo, una nuvola di vapore bianco, e poi il silenzio, rotto solo dal crepitio delle braci."},
+      {type:'dialogue',text:"— Domani — disse il padre, appoggiando il martello — vieni con me dal capitano delle guardie. Hanno bisogno di un garzone che sappia affilare le spade. Sei pronto?"},
+      {type:'prose',text:"Milo sentì qualcosa muoversi nel petto. Non era paura. Era qualcosa di più grande e indefinito, come l'odore dell'aria prima di un temporale."},
+      {type:'dialogue',text:'— Sono pronto — rispose.'},
+      {type:'prose',text:"Corrado lo guardò per un lungo momento, con quegli occhi stanchi che avevano visto troppe stagioni di fatica. Poi annuì, come se avesse ricevuto la risposta giusta a una domanda che non aveva mai fatto ad alta voce."},
+      {type:'prose',text:"Quella notte, Milo salì sul tetto della bottega come faceva spesso quando non riusciva a dormire. Da lassù si vedevano le mura di legno che cingevano Montagnana, alte e scure contro il cielo stellato. Torce ardevano sulle torri di guardia, piccole fiamme tremanti nel vento che saliva dalla pianura."},
+      {type:'prose',text:"La città dormiva. Le case erano silenziose, i vicoli deserti. Da qualche parte un cane abbaiava lontano, e poi anche quello tacque."},
+      {type:'prose',text:"Milo fissò l'orizzonte verso nord, dove dicevano che vivesse il signore da Romano, colui del quale i mercanti parlavano sottovoce nelle taverne, abbassando gli occhi come se il solo nominarlo potesse portare sventura. Ezzelino. Il nome aveva il suono di una lama che scivola nel fodero."},
+      {type:'prose',text:"Il ragazzo non sapeva ancora che di lì a poco quel nome avrebbe cambiato ogni cosa. Che quelle mura di legno che gli sembravano così solide ed eterne sarebbero diventate cenere in una sola notte. Che lui, Milo, figlio di un fabbro, avrebbe dovuto scegliere se fuggire o restare a combattere per una città che non aveva ancora capito fino in fondo di amare."},
+      {type:'prose',text:"Per ora c'era solo la notte, le torce sulle mura, e quel senso strano nel petto che assomigliava al coraggio ma poteva anche essere soltanto la paura di ciò che non si conosce ancora."},
+      {type:'prose',text:"Si addormentò sul tetto, avvolto nel mantello di lana grezza, con le stelle sopra di lui e le mura intorno, ignaro di quanto poco tempo restasse alla pace."}
+    ]
+  },
+  {
+    id: 2, num: 'Capitolo II', title: 'La notte di fuoco',
+    year: 'Montagnana, 25 marzo 1242',
+    audio: 'La notte di fuoco.mp3',
+    paragraphs: [
+      {type:'prose',text:'Milo non dormiva bene da tre notti.'},
+      {type:'prose',text:"C'era qualcosa nell'aria di quei giorni, qualcosa che i cani sentivano prima degli uomini e che faceva irrequieti i cavalli nelle stalle. I mercanti che arrivavano da Verona parlavano poco e mangiavano in fretta. Le guardie sulle mura erano state raddoppiate, e il capitano Rinaldo aveva smesso di sorridere del tutto."},
+      {type:'prose',text:"Quella notte era di turno con il vecchio Bertone, una guardia dalla barba grigia e le gambe storte che aveva combattuto contro i Veronesi vent'anni prima e da allora non aveva più smesso di raccontarlo."},
+      {type:'dialogue',text:"— Stai fermo — borbottò Bertone, senza alzare gli occhi dalla coppa di vino. — Cammini avanti e indietro come un'anima in pena."},
+      {type:'dialogue',text:"— C'è qualcosa — disse Milo, fissando l'oscurità della pianura. — Non sentite?"},
+      {type:'dialogue',text:'— Sento il vento.'},
+      {type:'dialogue',text:'— No. Sotto il vento. Come un rumore di terra che si muove.'},
+      {type:'prose',text:"Bertone alzò finalmente gli occhi. Poi si alzò lentamente, con uno scricchiolio delle ginocchia, e si avvicinò al bordo della torre. Il silenzio era strano. Troppo pieno."},
+      {type:'prose',text:"Fu allora che apparve la prima luce. Non sulla strada, non dove ci si aspettava un viandante o una torcia. Apparve ai margini della pianura, bassa e arancione, e poi un'altra, e un'altra ancora, finché l'orizzonte non sembrò prendere fuoco tutto insieme."},
+      {type:'dialogue',text:"— Alla guardia! — urlò Bertone con una voce giovane e disperata. — Alla guardia! Nemici!"},
+      {type:'prose',text:'Montagnana si svegliò nel caos. Le campane cominciarono a suonare tutte insieme. Le donne afferrarono i bambini, gli uomini cercarono le armi. Milo raggiunse la postazione delle armi dove il capitano Rinaldo stava già distribuendo spade e archi.'},
+      {type:'dialogue',text:"— Ragazzo! — gli gridò Rinaldo, lanciandogli una spada corta. — Stai vicino alle mura. Non eroismo, hai capito?"},
+      {type:'prose',text:"Le schiere di Ezzelino avanzavano nella notte come un'onda scura. Veronesi, tedeschi, saraceni — uomini di ogni terra uniti sotto il gonfalone del Romano. Poi arrivarono le frecce infuocate. Una pioggia di fuoco che trasformò la notte in qualcosa di infernale."},
+      {type:'prose',text:"La notte durò un'eternità. Quando l'alba cominciò a tingere il cielo di un grigio sporco, Montagnana era in fiamme per metà. Le mura di legno erano ridotte a tratti anneriti e fumanti. Ezzelino III da Romano era entrato in città come un padrone che prende possesso di ciò che considera già suo."},
+      {type:'dialogue',text:'— E adesso? — chiese Milo sottovoce.'},
+      {type:'dialogue',text:"— Adesso — disse infine Bertone — adesso impariamo a sopravvivere. E aspettiamo."},
+      {type:'dialogue',text:"— Il momento giusto — disse semplicemente. — Viene sempre. Per chi ha la pazienza di aspettarlo."},
+      {type:'prose',text:"Montagnana era caduta. Ma Milo, figlio del fabbro, era ancora vivo. E dentro di lui qualcosa di duro e ostinato si era posato nel petto come una pietra nel fondo di un fiume. Non era ancora coraggio. Ma ci assomigliava."}
+    ]
+  },
+  {
+    id: 3, num: 'Capitolo III', title: 'Il Tiranno',
+    year: 'Montagnana, primavera 1242',
+    audio: 'Il tiranno.mp3',
+    paragraphs: [
+      {type:'prose',text:'Ezzelino III da Romano non era come Milo se lo era immaginato.'},
+      {type:'prose',text:"L'uomo che vide entrare in città era di statura media, asciutto, con i capelli scuri striati di grigio e una barba curata. Cavalcava un cavallo nero senza fronzoli. Indossava una veste da viaggio ancora polverosa, come se la battaglia della notte precedente fosse stata per lui una faccenda ordinaria."},
+      {type:'prose',text:"Ma erano gli occhi che colpivano. Gli occhi di Ezzelino erano scuri e immobili, con uno sguardo che non si posava sulle cose ma le attraversava. Non erano occhi crudeli. Erano qualcosa di peggio: erano occhi indifferenti."},
+      {type:'dialogue',text:"— Non muoverti — soffiò Bertone all'orecchio del ragazzo, stringendogli il braccio con una mano che aveva la forza di una morsa."},
+      {type:'prose',text:"Ezzelino non era un signore che urlava e distruggeva per il gusto di farlo. Era peggio: era metodico. Nelle prime settimane fece censire ogni casa, ogni bottega, ogni granaio. Impose tributi precisi, calcolati con la fredda logica di chi conosce il confine oltre il quale i popoli si ribellano per fame. Chi obbediva veniva lasciato in pace. Chi resisteva spariva."},
+      {type:'prose',text:"La bottega di Corrado fu requisita per produrre ferri di cavallo e punte di lancia per le truppe del Romano. Il padre di Milo lavorava adesso per il nemico. Non disse niente la prima mattina. Accese il fuoco, prese il martello, e cominciò a battere il ferro come sempre. Ma la sera restava in silenzio per un tempo così lungo che sembrava aver dimenticato come si parlava."},
+      {type:'dialogue',text:"— I lavori sul mastio procedono? — era la voce di Ezzelino, bassa e precisa come il ticchettio di un orologio."},
+      {type:'dialogue',text:"— Montagnana deve diventare inespugnabile. Il castello sarà la nostra rocca in queste terre. Affinché chiunque guardi queste mura sappia che il Romano è qui e che il Romano resta."},
+      {type:'dialogue',text:'— La popolazione lavora. Questo è tutto quello che deve fare.'},
+      {type:'prose',text:"Milo si allontanò silenzioso nel buio del cortile. Capiva adesso cosa significava davvero essere conquistati: essere ridotti a forza lavoro, a ingranaggi in una macchina che altri governavano."},
+      {type:'dialogue',text:"— Aspetto — disse sottovoce, a nessuno e a tutti. — Ma non dimentico."},
+      {type:'prose',text:"Le stelle non risposero. Ma le mura bruciate sembravano ascoltare, e nel loro silenzio c'era qualcosa che assomigliava a una promessa."}
+    ]
+  },
+  {
+    id: 4, num: 'Capitolo IV', title: 'La Resistenza',
+    year: 'Montagnana, autunno 1242',
+    audio: 'La rersistenza.mp3',
+    paragraphs: [
+      {type:'prose',text:'Il momento giusto non arrivò in autunno.'},
+      {type:'prose',text:'Ma in quei mesi di attesa, qualcosa cresceva sotto la superficie di Montagnana come radici sotto la neve. Silenziosa, ostinata, invisibile.'},
+      {type:'prose',text:"Il gruppo di Fante il calzolaio si era allargato con cautela. C'era Simone il mugnaio, con una memoria prodigiosa. C'era la vedova Agnese, che portava ogni giorno il pane caldo al presidio sorridendo ai soldati, raccogliendo nel frattempo informazioni che valevano oro. C'era il giovane prete don Ilario, che usava il confessionale come luogo di raccolta notizie."},
+      {type:'dialogue',text:"— Ho ricevuto notizie — disse Bertone sottovoce. — Da Padova. I guelfi non hanno dimenticato. E il marchese d'Este non ha dimenticato Montagnana."},
+      {type:'dialogue',text:'— Vengono? — chiese Milo, sentendo qualcosa accendersi nel petto.'},
+      {type:'dialogue',text:'— Non ancora. Ma vogliono sapere se dentro le mura ci sono ancora uomini capaci di combattere.'},
+      {type:'prose',text:'Bertone sorrise per la prima volta da mesi. Era un sorriso storto, consumato, ma autentico.'},
+      {type:'dialogue',text:'— Rispondiamo di sì.'},
+      {type:'prose',text:"Nei mesi che seguirono, Milo divenne il punto di collegamento tra il gruppo di Fante e il mondo esterno. Imparò a portare messaggi nascosti nei doppi fondi dei cestini del pane. Imparò a leggere il comportamento delle guardie come si legge il tempo dal colore del cielo. Imparò che il coraggio non era l'assenza di paura ma la capacità di muoversi nonostante essa."},
+      {type:'prose',text:"Quella notte, tornando a casa, Milo incontrò suo padre sveglio accanto al fuoco quasi spento. Corrado teneva in mano un piccolo scudo di ferro, il simbolo di Montagnana, che aveva forgiato anni prima per un armigero della città. Lo aveva tenuto nascosto per tutto quel tempo."},
+      {type:'dialogue',text:'— Padre — disse Milo sottovoce.'},
+      {type:'prose',text:"Corrado alzò gli occhi. Non disse niente. Tese semplicemente la mano e offrì al figlio il piccolo scudo di ferro. Milo lo prese. Lo strinse nel pugno fino a sentire i bordi incidersi nel palmo. Alcune cose tra padre e figlio viaggiano senza il suono delle sillabe, lungo strade più antiche del linguaggio."},
+      {type:'prose',text:"Il momento giusto non era ancora arrivato. Ma Montagnana non aveva dimenticato chi era. E Milo portava adesso nel pugno chiuso il peso leggero di uno scudo di ferro e il peso infinitamente più grande di una città che aspettava."}
+    ]
+  },
+  {
+    id: 5, num: 'Capitolo V', title: 'Le Mura Rinascono',
+    year: 'Montagnana, primavera 1244',
+    audio: 'Le mura rinascono.mp3',
+    paragraphs: [
+      {type:'prose',text:'La notizia arrivò con un mercante di stoffe da Castelbaldo.'},
+      {type:'prose',text:"Si chiamava Renzo, e ufficialmente veniva a vendere tessuti alle mogli dei soldati del presidio. In realtà portava qualcosa di molto più prezioso nascosto nel doppio fondo del suo carro."},
+      {type:'dialogue',text:"— Rinaldo da Castelbaldo ha posto alla piazzaforte quattrocento soldati — disse Bertone. — Ottanta a cavallo. Una guarnigione vera, non una pattuglia."},
+      {type:'dialogue',text:"— Gli armigeri di Castelbaldo sono pronti a muoversi. Aspettano solo il segnale. Se Montagnana si solleva, loro arrivano lungo il fiume."},
+      {type:'prose',text:'Il silenzio che seguì era denso come miele.'},
+      {type:'dialogue',text:"— Allora dobbiamo essere pronti — disse Milo. — Quando loro arrivano, noi dobbiamo già tenere qualcosa. Una porta, una torre, qualsiasi cosa che gli apra la strada."},
+      {type:'dialogue',text:'— Parli come un capitano — disse Bertone.'},
+      {type:'dialogue',text:"— Parlo come un ragazzo che non vuole sprecare l'unica occasione che abbiamo — rispose Milo semplicemente."},
+      {type:'prose',text:"Fu in quei giorni che conobbe Giacomo. Era un ragazzo di poco più di quindici anni, con i capelli rossi come il grano maturo e una risata facile che sembrava fuori posto in quel tempo di guerra, ma che si rivelò essere una delle armi più efficaci del gruppo: nessuno sospetta di chi ride."},
+      {type:'prose',text:"Suo padre Corrado, una sera, posò sul tavolo uno strano oggetto: un cardine lavorato con una piccola leva nascosta nella cerniera che, se azionata nel modo giusto, avrebbe permesso di smontare il portone dall'interno in pochi secondi."},
+      {type:'dialogue',text:"— Ho installato il primo su un portone secondario delle mura nuove — disse Corrado. — Nessuno se ne è accorto."},
+      {type:'dialogue',text:'— Quanti portoni? — chiese Milo sottovoce.'},
+      {type:'dialogue',text:'— Per ora uno. Ma ho tempo.'},
+      {type:'prose',text:"Il messaggio diceva solo: Siamo pronti. Aspettiamo la primavera. Non era ancora la primavera giusta. Ma si avvicinava. E le mura nuove di Montagnana salivano verso il cielo, pietra su pietra, costruite dalle mani del nemico e già pronte, in qualche angolo nascosto che solo un fabbro sapeva trovare, ad aprirsi per chi avesse la chiave giusta."}
+    ]
+  },
+  {
+    id: 6, num: 'Capitolo VI', title: 'La Liberazione',
+    year: 'Montagnana, estate 1245',
+    audio: 'La liberazione.mp3',
+    paragraphs: [
+      {type:'prose',text:"Il segnale arrivò all'alba di una mattina di luglio, quando la nebbia dell'Adige strisciava ancora bassa sui campi."},
+      {type:'dialogue',text:"— Si muovono — disse Giacomo, senza nemmeno chiudere la porta. — Gli armigeri di Castelbaldo si muovono. Rinaldo ha dato il via. Ottanta cavalieri sull'Adige."},
+      {type:'prose',text:"Bertone si alzò lentamente, con quello scricchiolio delle ginocchia che era diventato il suono del coraggio per Milo. Prese la sua spada dal chiodo al muro, la guardò un momento come se ringraziasse qualcuno, e la appese alla cintura."},
+      {type:'dialogue',text:'— Allora è oggi — disse semplicemente.'},
+      {type:'prose',text:"Erano le seconde ore del pomeriggio quando la sentinella sulla torre nord diede l'allarme. Ma era già tardi. Milo era già al portone secondario. Il cardine cedette esattamente come suo padre aveva promesso, con uno scatto preciso e silenzioso. Il portone si aprì verso l'interno. Fuori c'era la pianura, e nella pianura c'era la cavalleria di Castelbaldo."},
+      {type:'dialogue',text:'— Figlio del fabbro? — chiese Rinaldo da Castelbaldo.'},
+      {type:'dialogue',text:'— Sì, messere.'},
+      {type:'dialogue',text:'— Ottimo lavoro — disse Rinaldo, e passò oltre al galoppo.'},
+      {type:'prose',text:"Fu Giacomo a salvargli la vita, quella mattina. Un secondo soldato si avvicinò dal lato cieco. Sentì un urlo — quella risata di Giacomo trasformata in grido di battaglia — e il soldato cadde colpito da un sacco di farina lanciato dall'alto di un balcone."},
+      {type:'dialogue',text:'— Non avevamo concordato i sacchi di farina nel piano! — urlò Milo.'},
+      {type:'dialogue',text:'— I piani si migliorano — disse Giacomo, già sparito per le scale.'},
+      {type:'prose',text:"Quella sera, Milo sedette sui gradini della bottega di suo padre. Corrado era accanto a lui, in silenzio, ma era un silenzio diverso. Era il silenzio di chi ha finito di aspettare."},
+      {type:'dialogue',text:'— Bertone — disse Milo alla fine. — Il momento giusto è arrivato.'},
+      {type:'dialogue',text:'— Viene sempre — disse il vecchio. — Per chi ha la pazienza di aspettarlo.'},
+      {type:'dialogue',text:'— Ho fame — disse Giacomo. — Qualcuno ha del pane?'},
+      {type:'prose',text:"Corrado tirò fuori da sotto il mantello una pagnotta. La spezzò in quattro pezzi senza una parola. La distribuì in silenzio. Mangiarono così, seduti sui gradini della bottega del fabbro, mentre Montagnana si ricordava ad alta voce di essere viva."}
+    ]
+  },
+  {
+    id: 7, num: 'Capitolo VII', title: 'I Carraresi',
+    year: 'Montagnana e dintorni, estate 1318',
+    audio: 'I Carraresi.mp3',
+    paragraphs: [
+      {type:'prose',text:"Pietro aveva i capelli grigi alle tempie. Lo stesso grigio che suo padre Milo aveva avuto quando gli raccontava le storie sulle mura. Pietro aveva sessant'anni e portava i segni di una vita trascorsa tra le mura di una città che aveva imparato a essere libera con la stessa fatica con cui si impara qualsiasi cosa che vale davvero."},
+      {type:'prose',text:"Milo se ne era andato vent'anni prima, in una mattina d'inverno del 1298, tenendo in mano il piccolo scudo di ferro, con la pace di chi ha fatto quello che doveva fare. Pietro aveva pianto una sola notte. Poi si era alzato e aveva continuato. Era quello che si faceva a Montagnana. Si continuava."},
+      {type:'dialogue',text:"— I Carraresi si muovono — disse Giacomo. — Iacopo da Carrara ha sconfitto gli Scaligeri. Lo hanno nominato Capitano del Popolo a Padova."},
+      {type:'dialogue',text:'— Cosa vogliono da Montagnana?'},
+      {type:'dialogue',text:'— Quello che vogliono tutti — disse Giacomo. — La città, le mura, la posizione. La chiave tra Verona e Padova non cambia valore con i secoli.'},
+      {type:'prose',text:"Come sempre, Giacomo aveva ragione. La città cambiò ancora padrone con quella consuetudine ormai antica che aveva insegnato ai Montagnanesi a guardare ogni nuova signoria con occhi aperti e cuore cauto."},
+      {type:'prose',text:"Ubertino da Carrara arrivò a Montagnana in una mattina d'autunno del 1340 con un piccolo seguito di consiglieri e architetti. Non con un esercito. Si fermò a lungo davanti alle mura, camminando lungo il perimetro, indicando punti, chiedendo misure."},
+      {type:'dialogue',text:"— Le mura occidentali sono le più esposte — disse Luca. — Se un esercito arriva da ovest con macchine d'assedio, quella è la debolezza. Mio nonno Milo lo disse al suo tempo."},
+      {type:'dialogue',text:"— Un bastione più avanzato. Una rocca che controlli l'accesso occidentale."},
+      {type:'dialogue',text:'— Ci pensiamo — disse semplicemente Ubertino.'},
+      {type:'dialogue',text:"— Castelbaldo tiene sempre — disse Matteo. — È quello che fanno, sulle rive del fiume. Tengono."},
+      {type:'dialogue',text:'— Il Montagnanese — disse Luca al figlio Andrea, sulla torre. — Guardalo bene. Ogni borgo, ogni torre, ogni campanile. Ogni pezzo di questa terra ha una storia che vale la pena di conoscere.'},
+      {type:'dialogue',text:'— Me la racconti?'},
+      {type:'dialogue',text:'— Ci vorrebbe tutta la notte — disse Luca.'},
+      {type:'dialogue',text:'— Ho tutta la notte — rispose Andrea semplicemente.'},
+      {type:'prose',text:"E così, sulle mura di Montagnana, mentre la luna saliva sulla Sculdascia e le stelle si accendevano una a una sopra i dieci comuni, Luca cominciò a raccontare. E Andrea ascoltò ogni parola, come si ascoltano le cose che devono essere ricordate."}
+    ]
+  },
+  {
+    id: 8, num: 'Capitolo VIII', title: 'La Rocca degli Alberi',
+    year: 'Montagnana, 1360-1405',
+    audio: 'La rocca degli alberi.mp3',
+    paragraphs: [
+      {type:'prose',text:"Andrea era invecchiato adesso. Luca non c'era più. Se n'era andato in una mattina di primavera del 1348, quando la peste nera aveva attraversato il Montagnanese come una falce invisibile. Se n'era andato tenendo in mano il piccolo scudo di ferro. Andrea aveva pianto una sola notte. Poi si era alzato e aveva continuato. Era quello che si faceva a Montagnana."},
+      {type:'prose',text:"Nell'anno del Signore 1360, stava guardando qualcosa che nessuno della sua famiglia aveva ancora visto: la nascita di una rocca nuova. Francesco il Vecchio da Carrara aveva mandato il suo architetto migliore, Franceschino de' Schici. La rocca doveva sorgere a occidente, esattamente dove Milo aveva detto tanti anni prima."},
+      {type:'dialogue',text:'— Qui — disse Franceschino. — La rocca sorge qui. Un androne di passaggio, un torrione orientale, e il mastio. Otto piani il mastio, con garitta in cima.'},
+      {type:'dialogue',text:"— Chi controlla l'ottavo piano vede fino all'Adige in una direzione e fino alle colline Euganee nell'altra. Nessun esercito può avvicinarsi senza essere visto con largo anticipo."},
+      {type:'dialogue',text:"— Dieci chiusure mobili. Quattro ponti levatoi, quattro portoni, due saracinesche. Si può perdere tutto il resto e resistere ancora nel mastio per settimane."},
+      {type:'dialogue',text:"— Una rocca che non si arrende mai del tutto — disse Franceschino. — Sempre c'è un ultimo baluardo. Sempre c'è qualcosa che tiene."},
+      {type:'prose',text:"I lavori durarono due anni. E quando nel 1362 la Rocca degli Alberi fu completata, Andrea salì fino all'ottavo piano del mastio e guardò il Montagnanese dall'alto come non aveva mai guardato prima. Le mura di Montagnana correvano complete e solide lungo tutto il perimetro."},
+      {type:'prose',text:"Nel 1405, quando le truppe veneziane si mossero verso Montagnana, Tommaso da Mantova tenne la rocca fino all'ultimo assalto. Non per inutile orgoglio. Tenne perché era quello il suo compito, perché ogni ora di resistenza era un atto di rispetto verso chi aveva costruito quelle pietre e verso chi sarebbe venuto dopo."},
+      {type:'dialogue',text:'— Terremo la testa alta? — chiese sottovoce Elena accanto a Marco.'},
+      {type:'dialogue',text:'— La terremo alta — disse Marco. — È quello che si fa qui. È quello che abbiamo sempre fatto.'},
+      {type:'prose',text:'Il leone di San Marco sventolava adesso sulla torre più alta. Ma le pietre erano le stesse. Le mura erano le stesse. Montagnana aveva cambiato padrone ancora una volta. Ma Montagnana era ancora Montagnana.'}
+    ]
+  },
+  {
+    id: 9, num: 'Capitolo IX', title: 'Il Palio',
+    year: 'Montagnana, estate 1420',
+    audio: 'Il Palio.mp3',
+    paragraphs: [
+      {type:'prose',text:"Il tamburo cominciò a battere prima dell'alba. Marco lo sentì nel sonno, quel ritmo lento e profondo che saliva dal vallo come il battito di un cuore antico, e si svegliò di scatto con il cuore che già correva. Era il giorno del Palio."},
+      {type:'prose',text:"Si alzò in fretta, prese dal ripiano il piccolo scudo di ferro. Lo tenne un momento nel palmo aperto, sentendo il peso familiare dei bordi consumati dal tempo e da troppe mani. Pensò a Milo, a Pietro, a Luca, ad Andrea, a suo padre. Lo appese alla cintura e scese in strada."},
+      {type:'prose',text:"Montagnana era già sveglia. Le torce ardevano lungo i camminamenti. La gente usciva dalle case in abiti dai colori vivaci. I bambini correvano tra le gambe degli adulti con quella libertà caotica che ha l'alba delle feste."},
+      {type:'dialogue',text:"— Sai chi corre per Castelbaldo quest'anno? — chiese Elena."},
+      {type:'dialogue',text:"— Giovanni il rosso — disse Marco. — È bravo. Conosco il suo cavallo, un grigio veloce come il vento sull'Adige."},
+      {type:'dialogue',text:'— Il trisavolo Milo ha mai visto il Palio? — chiese Elena sottovoce.'},
+      {type:'dialogue',text:'— Non so se lo ha visto — disse Marco. — Ma so che lo avrebbe capito. Meglio di chiunque altro.'},
+      {type:'prose',text:"Arrivarono i rappresentanti di tutti e dieci i comuni. Da Castelbaldo arrivò una delegazione imponente, con gli armigeri in tenuta da parata che marciavano compatti con quel passo solido dei soldati abituati a difendere una posizione. Erano gli eredi di quei quattrocento uomini che Rinaldo da Castelbaldo aveva guidato in soccorso di Montagnana. Dieci comuni. Dieci storie. Un'unica piazza."},
+      {type:'prose',text:"La campana della torre suonò tre volte. Il silenzio cadde sulla folla con la rapidità delle cose attese. Poi suonò ancora, un colpo solo, secco e definitivo. I cavalli scattarono."},
+      {type:'prose',text:"Fu un momento di pura bellezza caotica, dieci animali e dieci uomini che diventavano una cosa sola con la terra sotto gli zoccoli e il vento contro le facce. La folla esplose in un boato che rimbalzò tra le mura antiche. Il fantino di Montagnana tagliò il traguardo per primo."},
+      {type:'prose',text:"Quando il drappo rosso fu consegnato al fantino vincitore, Marco strinse nel pugno il piccolo scudo di ferro. Ma adesso il gesto non era difesa. Non era attesa. Non era resistenza silenziosa nell'ombra. Era qualcosa di diverso e di più grande. Era memoria."},
+      {type:'dialogue',text:'— Milo — disse sottovoce, in mezzo alla folla festante. — Hai visto?'},
+      {type:'prose',text:"Il vento salì dalle mura e gli scompigliò i capelli, tiepido e leggero, odorando di erba nuova e di quella cosa indefinibile che è l'odore della terra che si ricorda di essere viva. Marco la prese come risposta."},
+      {type:'prose',text:"Più tardi, salì sulla torre più alta della Rocca degli Alberi e scrisse su un foglio di pergamena: Il Palio non è una corsa. Il Palio è la risposta che diamo ogni anno alla domanda che la storia ci fa: siete ancora voi? E noi rispondiamo: sì. Siamo ancora noi. Finché ci sarà un cavallo pronto a correre e una bandiera pronta a sventolare, la Sculdascia vivrà. Finché ci sarà una mano pronta a stringere uno scudo di ferro e una voce pronta a raccontare, Montagnana vivrà. Io lo scrivo. Voi lo ricordate. Marco di Montagnana."}
+    ]
+  },
+  {
+    id: 10, num: 'Epilogo', title: 'Le pietre ricordano',
+    year: 'Montagnana, ogni estate',
+    audio: 'Epilogo.mp3',
+    paragraphs: [
+      {type:'prose',text:'Le torri di Montagnana si levano ancora contro il cielo.'},
+      {type:'prose',text:"Il Mastio di Ezzelino, severo e possente, veglia ancora sulle campagne che si stendono verso Verona e verso Padova. La Rocca degli Alberi apre ancora i suoi merli al vento della pianura, testimone muta di assedi e di liberazioni, di signorie tramontate e di comunità sopravvissute a tutto."},
+      {type:'prose',text:"Le mura corrono ancora complete intorno alla città, quelle stesse mura che un ragazzo di sedici anni vide bruciare in una notte di marzo del 1242 e vide rinascere più forti, più alte, più solide delle precedenti. Come se il fuoco non avesse distrutto ma purificato, non abbattuto ma temprato."},
+      {type:'prose',text:"E quando la campana suona e i cavalli scattano lungo il vallo, per un istante che vale un'eternità, Milo è ancora lì. Bertone con la sua coppa vuota, Fante il calzolaio con le dita di cera, Agnese la vedova con il pane caldo, Giacomo con la sua risata impossibile e il sacco di farina, Corrado con il martello e lo scudo di ferro nascosto nella bottega."},
+      {type:'prose',text:"Perché le città non sono fatte di mura. Le mura cadono, bruciano, vengono ricostruite e abbattute ancora. Le città sono fatte di memoria. Della memoria ostinata e testarda di chi ha vissuto, resistito, atteso il momento giusto e poi si è alzato ancora."},
+      {type:'prose',text:"Montagnana lo sa da quasi mille anni. E continua a ricordarlo ogni estate, sulle mura che il fuoco non riesce a tenere abbassate, sotto il cielo che nessun tiranno è mai riuscito a conquistare del tutto."},
+      {type:'prose',text:"Finché ci sarà una storia da raccontare, Montagnana vivrà."}
+    ]
+  },
+  {
+    id: 11, num: 'Nota', title: "Nota dell'Autore",
+    year: '',
+    audio: "Nota dell'autore.mp3",
+    paragraphs: [
+      {type:'prose',text:'Questo racconto è frutto di fantasia. I personaggi di Milo, Corrado, Bertone, Fante, Agnese, don Ilario, Giacomo, Pietro, Luca, Andrea, Marco ed Elena sono completamente inventati e vivono soltanto nelle pagine di questo libro. Le loro vicende, i loro dialoghi e le loro azioni non hanno alcun riscontro storico documentato.'},
+      {type:'prose',text:"Il Capitolo VI, dedicato alla liberazione di Montagnana, è completamente inventato. Sebbene il dominio di Ezzelino III da Romano sulla città sia storicamente documentato, i dettagli della liberazione narrati in queste pagine, incluso il personaggio di Rinaldo da Castelbaldo e il ruolo degli armigeri nel soccorso alla città, sono frutto di libera invenzione narrativa."},
+      {type:'prose',text:"L'autore è pienamente consapevole che alcuni elementi narrativi non coincidono con la storia reale. Questa scelta è stata fatta deliberatamente, con il desiderio di offrire al lettore un racconto avvincente e appassionante, capace di avvicinare chiunque alle radici profonde di questa terra straordinaria. La fantasia, in questo caso, è stata messa al servizio della memoria."},
+      {type:'prose',text:"Per la storia vera e documentata di Montagnana, dei suoi castelli, di Ezzelino III da Romano, dei Carraresi e dei dieci comuni del Montagnanese, si rimanda alle fonti storiche ufficiali e agli studiosi che hanno dedicato anni di ricerca a questi luoghi."}
+    ]
+  },
+  {
+    id: 12, num: '', title: 'Ringraziamenti',
+    year: '',
+    audio: 'Ringraziamenti.mp3',
+    paragraphs: [
+      {type:'prose',text:"Un ringraziamento sincero e sentito va a tutti e dieci i Comuni del Montagnanese, custodi di una storia antica e preziosa che merita di essere conosciuta, raccontata e celebrata: Montagnana, Casale di Scodosia, Castelbaldo, Masi, Megliadino San Vitale, Megliadino San Fidenzio, Merlara, Saletto, Santa Margherita d'Adige, Urbana."},
+      {type:'prose',text:"Un ringraziamento speciale, dal profondo del cuore, va a chi da oltre trent'anni dà voce al Palio dei 10 Comuni, all'Associazione Palio dei 10 Comuni che, senza di essa, la storia che viviamo ogni anno la prima domenica di settembre non esisterebbe. Grazie per tenere viva la fiamma della memoria, per far sfilare ogni anno i gonfaloni dei dieci comuni, per far battere i tamburi all'alba e far scattare i cavalli lungo il vallo."},
+      {type:'prose',text:"Finché ci sarà il Palio, la Sculdascia vivrà."}
+    ]
+  },
+  {
+    id: 13, num: '', title: 'Informazioni sugli Autori',
+    year: '',
+    audio: 'Informazioni sugli autori.mp3',
+    paragraphs: [
+      {type:'prose',text:"Silvia e Denis sono due compagni di vita che hanno scoperto insieme una passione inaspettata: la rievocazione storica."},
+      {type:'prose',text:"Nella vita di tutti i giorni Denis lavora come operaio metalmeccanico, ma quando finisce il turno le mani non si fermano: forgia scudi, spade e asce, lavora il legno e il cuoio, costruisce con pazienza e cura tutto ciò che serve a dare vita al passato. Silvia di mestiere si prende cura delle persone come estetista, ma la sua vera magia la esprime altrove: nelle rune che studia con passione, nei segnalibri e nei piccoli oggetti che crea con la fantasia."},
+      {type:'prose',text:"Tutto è iniziato quasi per caso, al Bundan Celtic Festival di Bondeno. Qualche settimana dopo, agosto 2022, passeggiando per le vie di Montagnana già addobbata a festa, Silvia disse: Una cosa che mi sarebbe sempre piaciuta è di sfilare per il Palio. Denis rispose semplicemente: Cerca, fai richiesta, e vediamo. Due giorni dopo erano già in contatto con il presidente Martino Gobbo, e così ebbe inizio la loro avventura con gli Armigeri del Comitato Palio di Castelbaldo."},
+      {type:'prose',text:"Da lì è nata la pagina Castelbaldo Medievale: il Palio, grazie anche alle preziose ricerche e narrazioni del Dott. Gianni Pasqualin. Non siamo storici, non siamo scrittori. Siamo due persone comuni a cui questa terra, questa storia e questa comunità hanno cambiato qualcosa dentro. Un libro scritto per chi quelle emozioni le vive, le ha vissute, o anche solo vuole sfiorarle attraverso la carta."}
+    ]
+  }
+];
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const audio = document.getElementById('audio-el');
+let curChapter = 0;
+let isPlaying = false;
+let audioAvailable = {}; // map: chapter id → true/false
+let speeds = [0.8, 1.0, 1.2, 1.5];
+let spdIdx = 1;
+let ttsUtterance = null;
+let ttsActive = false;
+let ttsParagraph = 0;
+
+// Check TTS availability
+const hasTTS = 'speechSynthesis' in window;
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+function enterApp() {
+  document.getElementById('splash').classList.add('out');
+  preCheckAudio();
+  buildChapterList();
+  loadChapter(0);
+  bindAudioEvents();
+}
+
+function preCheckAudio() {
+  // Silently test if each MP3 exists via HEAD-like check
+  CHAPTERS.forEach(ch => {
+    const url = AUDIO_BASE + ch.audio;
+    const tester = new Audio();
+    tester.addEventListener('canplaythrough', () => {
+      audioAvailable[ch.id] = true;
+      updateChapterAudioBadge(ch.id, true);
+    }, { once: true });
+    tester.addEventListener('error', () => {
+      audioAvailable[ch.id] = false;
+      updateChapterAudioBadge(ch.id, false);
+    }, { once: true });
+    tester.src = url;
+    tester.preload = 'metadata';
+  });
+}
+
+function bindAudioEvents() {
+  audio.addEventListener('timeupdate', onTimeUpdate);
+  audio.addEventListener('ended', onAudioEnded);
+  audio.addEventListener('play', () => { setPlayState(true); });
+  audio.addEventListener('pause', () => { if (!audio.ended) setPlayState(false); });
+  audio.addEventListener('error', onAudioError);
+  audio.addEventListener('loadedmetadata', () => {
+    document.getElementById('time-tot').textContent = formatTime(audio.duration);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// CHAPTER LIST
+// ═══════════════════════════════════════════════════════════
+function buildChapterList() {
+  const list = document.getElementById('ch-list');
+  list.innerHTML = '';
+  CHAPTERS.forEach((ch, i) => {
+    const el = document.createElement('div');
+    el.className = 'ch-item' + (i === 0 ? ' active' : '');
+    el.id = 'chi-' + ch.id;
+    el.innerHTML = `
+      <div class="ci-num">${ch.num}</div>
+      <div class="ci-title">${ch.title}</div>
+      ${ch.year ? `<div class="ci-year">${ch.year}</div>` : ''}
+      <div class="ci-status" id="ci-st-${ch.id}">⏳ Verifica audio…</div>`;
+    el.onclick = () => selectChapter(i);
+    list.appendChild(el);
+  });
+}
+
+function updateChapterAudioBadge(id, available) {
+  const el = document.getElementById('ci-st-' + id);
+  if (!el) return;
+  if (available) {
+    el.textContent = '🔊 Audio ElevenLabs disponibile';
+    el.style.color = '#c8972a';
+    document.getElementById('chi-' + id)?.classList.add('has-audio');
+  } else {
+    el.textContent = '🔤 Voce sintetizzata (MP3 non caricato)';
+    el.style.color = '#7a5c18';
+  }
+}
+
+function selectChapter(idx) {
+  stopAll();
+  loadChapter(idx);
+  togglePanel();
+}
+
+function togglePanel() {
+  document.getElementById('chapter-panel').classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOAD CHAPTER
+// ═══════════════════════════════════════════════════════════
+function loadChapter(idx) {
+  curChapter = idx;
+  isPlaying = false;
+  ttsParagraph = 0;
+  updatePlayBtn();
+
+  document.querySelectorAll('.ch-item').forEach((el, i) => el.classList.toggle('active', i === idx));
+
+  const ch = CHAPTERS[idx];
+  const content = document.getElementById('text-content');
+  content.innerHTML = '';
+
+  // Heading
+  const hd = document.createElement('div');
+  hd.className = 'ch-heading';
+  hd.innerHTML = `<div class="lbl">${ch.num}</div><h1>${ch.title}</h1>${ch.year ? `<div class="yr">${ch.year}</div>` : ''}`;
+  content.appendChild(hd);
+
+  // Audio notice
+  const hasAudio = audioAvailable[ch.id];
+  if (hasAudio === false) {
+    const notice = document.createElement('div');
+    notice.className = 'audio-missing-notice';
+    notice.innerHTML = `<span class="ico">🎙</span><span>L'audio ElevenLabs per questo capitolo non è ancora stato caricato.<br>In riproduzione: voce sintetizzata del dispositivo.</span>`;
+    content.appendChild(notice);
+  }
+
+  // Paragraphs
+  ch.paragraphs.forEach((p, i) => {
+    const el = document.createElement('p');
+    el.className = 'para ' + p.type;
+    if (i === 0 && p.type === 'prose') el.classList.add('drop-cap');
+    el.id = 'p-' + i;
+    el.textContent = p.text;
+    content.appendChild(el);
+  });
+
+  // Player info
+  document.getElementById('p-title').textContent = ch.title;
+  document.getElementById('p-mode').textContent =
+    audioAvailable[ch.id] ? '🔊 Audio ElevenLabs' : (hasTTS ? '🔤 Voce sintetizzata' : '📖 Solo lettura');
+
+  // Load audio if available
+  if (audioAvailable[ch.id]) {
+    audio.src = AUDIO_BASE + ch.audio;
+    audio.load();
+    document.getElementById('time-tot').textContent = '--:--';
+  } else {
+    audio.src = '';
+  }
+
+  updateProgress(0);
+  document.getElementById('reader').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════════════════════════════
+// PLAYBACK — REAL AUDIO
+// ═══════════════════════════════════════════════════════════
+function togglePlay() {
+  const ch = CHAPTERS[curChapter];
+  if (audioAvailable[ch.id]) {
+    // Real MP3
+    if (audio.paused) {
+      audio.playbackRate = speeds[spdIdx];
+      audio.play().catch(onAudioError);
+    } else {
+      audio.pause();
+    }
+  } else {
+    // TTS fallback
+    if (ttsActive) { pauseTTS(); } else { startTTS(); }
+  }
+}
+
+function skip(sec) {
+  const ch = CHAPTERS[curChapter];
+  if (audioAvailable[ch.id] && audio.src) {
+    audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + sec));
+  }
+}
+
+function onTimeUpdate() {
+  const t = audio.currentTime;
+  const d = audio.duration || 0;
+  updateProgress(d > 0 ? t / d : 0);
+  document.getElementById('time-cur').textContent = formatTime(t);
+  if (d > 0) document.getElementById('time-tot').textContent = formatTime(d);
+  // Sync text highlight roughly
+  syncTextToAudio(t, d);
+}
+
+function onAudioEnded() {
+  setPlayState(false);
+  clearHighlight();
+  // Auto-advance
+  if (curChapter < CHAPTERS.length - 1) {
+    setTimeout(() => { loadChapter(curChapter + 1); startOrAdvice(); }, 1000);
+  }
+}
+
+function startOrAdvice() {
+  const ch = CHAPTERS[curChapter];
+  if (audioAvailable[ch.id]) {
+    audio.playbackRate = speeds[spdIdx];
+    audio.play().catch(() => {});
+  }
+}
+
+function onAudioError() {
+  audioAvailable[CHAPTERS[curChapter].id] = false;
+  updateChapterAudioBadge(CHAPTERS[curChapter].id, false);
+  document.getElementById('p-mode').textContent = hasTTS ? '🔤 Voce sintetizzata' : '📖 Solo lettura';
+  setPlayState(false);
+}
+
+function seekClick(e) {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const ratio = (e.clientX - rect.left) / rect.width;
+  const ch = CHAPTERS[curChapter];
+  if (audioAvailable[ch.id] && audio.duration) {
+    audio.currentTime = ratio * audio.duration;
+  }
+}
+
+// Rough paragraph sync: divide duration by paragraph count
+function syncTextToAudio(t, d) {
+  if (!d) return;
+  const ch = CHAPTERS[curChapter];
+  const n = ch.paragraphs.length;
+  const pIdx = Math.min(Math.floor((t / d) * n), n - 1);
+  if (pIdx !== lastHighlightIdx) {
+    lastHighlightIdx = pIdx;
+    highlightPara(pIdx);
+    scrollToPara(pIdx);
+  }
+}
+let lastHighlightIdx = -1;
+
+// ═══════════════════════════════════════════════════════════
+// PLAYBACK — TTS FALLBACK
+// ═══════════════════════════════════════════════════════════
+function startTTS() {
+  if (!hasTTS) return;
+  ttsActive = true;
+  setPlayState(true);
+  speakPara(ttsParagraph);
+}
+
+function pauseTTS() {
+  ttsActive = false;
+  speechSynthesis.cancel();
+  setPlayState(false);
+}
+
+function speakPara(idx) {
+  const ch = CHAPTERS[curChapter];
+  if (idx >= ch.paragraphs.length) {
+    ttsActive = false;
+    setPlayState(false);
+    clearHighlight();
+    if (curChapter < CHAPTERS.length - 1) {
+      setTimeout(() => { loadChapter(curChapter + 1); startTTS(); }, 1200);
+    }
+    return;
+  }
+  ttsParagraph = idx;
+  highlightPara(idx);
+  scrollToPara(idx);
+
+  // Fake progress
+  const n = ch.paragraphs.length;
+  updateProgress(idx / n);
+  document.getElementById('time-cur').textContent = `§ ${idx + 1}/${n}`;
+
+  const utt = new SpeechSynthesisUtterance(ch.paragraphs[idx].text);
+  utt.lang = 'it-IT';
+  utt.rate = speeds[spdIdx];
+  const voices = speechSynthesis.getVoices();
+  const itVoice = voices.find(v => v.lang.startsWith('it') && v.localService) || voices.find(v => v.lang.startsWith('it'));
+  if (itVoice) utt.voice = itVoice;
+  utt.onend = () => { if (ttsActive) speakPara(idx + 1); };
+  utt.onerror = () => { if (ttsActive) speakPara(idx + 1); };
+  ttsUtterance = utt;
+  speechSynthesis.speak(utt);
+}
+
+function stopAll() {
+  isPlaying = false;
+  audio.pause();
+  if (hasTTS) speechSynthesis.cancel();
+  ttsActive = false;
+  lastHighlightIdx = -1;
+  setPlayState(false);
+  clearHighlight();
+}
+
+// ═══════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function setPlayState(playing) {
+  isPlaying = playing;
+  updatePlayBtn();
+  document.getElementById('play-dot').classList.toggle('on', playing);
+}
+
+function updatePlayBtn() {
+  document.getElementById('play-icon').textContent = isPlaying ? '⏸' : '▶';
+}
+
+function highlightPara(idx) {
+  clearHighlight();
+  document.getElementById('p-' + idx)?.classList.add('speaking');
+}
+
+function clearHighlight() {
+  document.querySelectorAll('.para.speaking').forEach(e => e.classList.remove('speaking'));
+}
+
+function scrollToPara(idx) {
+  document.getElementById('p-' + idx)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function updateProgress(ratio) {
+  document.getElementById('prog-bar').style.width = (ratio * 100) + '%';
+  document.getElementById('btn-play').style.setProperty('--play-prog', (ratio * 100) + '%');
+}
+
+function cycleSpeed() {
+  spdIdx = (spdIdx + 1) % speeds.length;
+  const s = speeds[spdIdx];
+  document.getElementById('btn-spd').textContent = s + '×';
+  if (!audio.paused) audio.playbackRate = s;
+  if (ttsActive) { pauseTTS(); setTimeout(startTTS, 80); }
+}
+
+function formatTime(s) {
+  if (!s || isNaN(s)) return '0:00';
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+</script>
+</body>
+</html>
