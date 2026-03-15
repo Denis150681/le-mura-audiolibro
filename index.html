@@ -681,7 +681,7 @@ const CHAPTERS = [
   },
   {
     id: 8, num: 'Capitolo VIII', title: 'La Rocca degli Alberi',
-    year: 'Montagnana, 1360-1405',
+    year: 'Montagnana, 1360–1405',
     audio: 'La rocca degli alberi.mp3',
     paragraphs: [
       {type:'prose',text:"Andrea era invecchiato adesso."},
@@ -962,6 +962,10 @@ function loadChapter(idx) {
     content.appendChild(el);
   });
 
+  // Reset sync map per il nuovo capitolo
+  syncMap = [];
+  lastHighlightIdx = -1;
+
   // Player info
   document.getElementById('p-title').textContent = ch.title;
   document.getElementById('p-mode').textContent =
@@ -1051,19 +1055,48 @@ function seekClick(e) {
   }
 }
 
-// Rough paragraph sync: divide duration by paragraph count
+// Sincronizzazione testo-audio proporzionale alla lunghezza dei paragrafi
+function buildSyncMap(chapterIdx) {
+  const ch = CHAPTERS[chapterIdx];
+  const paras = ch.paragraphs;
+  // Calcola peso di ogni paragrafo in base alla lunghezza del testo
+  const lengths = paras.map(p => p.text.length);
+  const total = lengths.reduce((a, b) => a + b, 0);
+  // Costruisce array di soglie: a che frazione del tempo inizia ogni paragrafo
+  let cumulative = 0;
+  const thresholds = lengths.map(l => {
+    const t = cumulative / total;
+    cumulative += l;
+    return t;
+  });
+  return thresholds;
+}
+
+let syncMap = [];
+let lastHighlightIdx = -1;
+
 function syncTextToAudio(t, d) {
-  if (!d) return;
+  if (!d || d === 0) return;
+  if (syncMap.length === 0) syncMap = buildSyncMap(curChapter);
+
+  const progress = t / d;
   const ch = CHAPTERS[curChapter];
   const n = ch.paragraphs.length;
-  const pIdx = Math.min(Math.floor((t / d) * n), n - 1);
+
+  // Trova l'ultimo paragrafo la cui soglia è <= progress corrente
+  let pIdx = 0;
+  for (let i = 0; i < syncMap.length; i++) {
+    if (syncMap[i] <= progress) pIdx = i;
+    else break;
+  }
+  pIdx = Math.min(pIdx, n - 1);
+
   if (pIdx !== lastHighlightIdx) {
     lastHighlightIdx = pIdx;
     highlightPara(pIdx);
     scrollToPara(pIdx);
   }
 }
-let lastHighlightIdx = -1;
 
 // ═══════════════════════════════════════════════════════════
 // PLAYBACK — TTS FALLBACK
