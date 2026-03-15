@@ -795,17 +795,12 @@ function loadChapter(idx) {
 // ═══════════════════════════════════════════════════════════
 function togglePlay() {
   const ch = CHAPTERS[curChapter];
-  if (audioAvailable[ch.id]) {
-    // Real MP3
-    if (audio.paused) {
-      audio.playbackRate = speeds[spdIdx];
-      audio.play().catch(onAudioError);
-    } else {
-      audio.pause();
-    }
+  // Usa SOLO l'audio MP3 — nessun TTS fallback
+  if (audio.paused) {
+    audio.playbackRate = speeds[spdIdx];
+    audio.play().catch(onAudioError);
   } else {
-    // TTS fallback
-    if (ttsActive) { pauseTTS(); } else { startTTS(); }
+    audio.pause();
   }
 }
 
@@ -844,10 +839,9 @@ function startOrAdvice() {
 }
 
 function onAudioError() {
-  audioAvailable[CHAPTERS[curChapter].id] = false;
-  updateChapterAudioBadge(CHAPTERS[curChapter].id, false);
-  document.getElementById('p-mode').textContent = hasTTS ? '🔤 Voce sintetizzata' : '📖 Solo lettura';
+  // Non avviare TTS — mostra solo messaggio di errore
   setPlayState(false);
+  document.getElementById('p-mode').textContent = '⚠️ Audio non disponibile';
 }
 
 function seekClick(e) {
