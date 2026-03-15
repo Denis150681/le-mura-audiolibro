@@ -794,9 +794,17 @@ function loadChapter(idx) {
 // PLAYBACK — REAL AUDIO
 // ═══════════════════════════════════════════════════════════
 function togglePlay() {
-  const ch = CHAPTERS[curChapter];
   // Usa SOLO l'audio MP3 — nessun TTS fallback
-  if (audio.paused) {
+  if (!audio.src || audio.src === window.location.href) {
+    // Audio non ancora caricato, prova a ricaricare il capitolo corrente
+    const ch = CHAPTERS[curChapter];
+    audio.src = AUDIO_BASE + ch.audio;
+    audio.load();
+    setTimeout(() => {
+      audio.playbackRate = speeds[spdIdx];
+      audio.play().catch(onAudioError);
+    }, 300);
+  } else if (audio.paused) {
     audio.playbackRate = speeds[spdIdx];
     audio.play().catch(onAudioError);
   } else {
