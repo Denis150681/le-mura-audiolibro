@@ -184,20 +184,23 @@
 
   /* Progress */
   .prog-wrap {
-    position: relative; height: 3px; background: rgba(200,151,42,0.12);
-    border-radius: 2px; margin-bottom: 10px; cursor: pointer;
+    position: relative; height: 10px; background: rgba(200,151,42,0.12);
+    border-radius: 5px; margin-bottom: 10px; cursor: pointer;
+    touch-action: none;
   }
+  .prog-wrap:hover { background: rgba(200,151,42,0.2); }
   #prog-bar {
     height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold));
-    border-radius: 2px; width: 0%; transition: width .25s linear; position: relative;
+    border-radius: 5px; width: 0%; transition: width .25s linear; position: relative;
   }
   #prog-bar::after {
-    content:''; position:absolute; right:-5px; top:-4px;
-    width:11px; height:11px; background:var(--gold); border-radius:50%;
-    box-shadow: 0 0 10px rgba(200,151,42,0.9);
-    opacity: 0; transition: opacity .2s;
+    content:''; position:absolute; right:-7px; top:50%;
+    transform: translateY(-50%);
+    width:16px; height:16px; background:var(--gold); border-radius:50%;
+    box-shadow: 0 0 12px rgba(200,151,42,0.9);
+    opacity: 1; transition: transform .15s;
   }
-  .prog-wrap:hover #prog-bar::after { opacity: 1; }
+  .prog-wrap:active #prog-bar::after { transform: translateY(-50%) scale(1.3); }
 
   /* Time */
   .time-row { display:flex; justify-content:space-between; margin-bottom:8px; }
@@ -1007,9 +1010,13 @@ function togglePlay() {
 }
 
 function skip(sec) {
-  const ch = CHAPTERS[curChapter];
-  if (audioAvailable[ch.id] && audio.src) {
-    audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + sec));
+  if (!audio.src || audio.src === window.location.href) return;
+  const newTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + sec));
+  audio.currentTime = newTime;
+  // Se in pausa, riprendi dopo seek
+  if (audio.paused && audio.duration) {
+    audio.playbackRate = speeds[spdIdx];
+    audio.play().catch(() => {});
   }
 }
 
@@ -1048,32 +1055,74 @@ function onAudioError() {
 
 function seekClick(e) {
   const rect = e.currentTarget.getBoundingClientRect();
-  const ratio = (e.clientX - rect.left) / rect.width;
-  const ch = CHAPTERS[curChapter];
-  if (audioAvailable[ch.id] && audio.duration) {
+  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  if (audio.duration) {
+    audio.currentTime = ratio * audio.duration;
+    if (audio.paused) {
+      audio.playbackRate = speeds[spdIdx];
+      audio.play().catch(() => {});
+    }
+  }
+}
+
+// Barra trascinabile — touch e mouse
+let isDragging = false;
+
+function seekFromEvent(e, wrap) {
+  const rect = wrap.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  if (audio.duration) {
     audio.currentTime = ratio * audio.duration;
   }
 }
 
-// Sincronizzazione testo-audio proporzionale alla lunghezza dei paragrafi
+document.addEventListener('DOMContentLoaded', () => {
+  const wrap = document.getElementById('prog-wrap');
+  if (!wrap) return;
+
+  // Mouse
+  wrap.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    seekFromEvent(e, wrap);
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (isDragging) seekFromEvent(e, wrap);
+  });
+  document.addEventListener('mouseup', () => { isDragging = false; });
+
+  // Touch
+  wrap.addEventListener('touchstart', (e) => {
+    isDragging = true;
+    seekFromEvent(e, wrap);
+  }, {passive: true});
+  document.addEventListener('touchmove', (e) => {
+    if (isDragging) seekFromEvent(e, wrap);
+  }, {passive: true});
+  document.addEventListener('touchend', () => { isDragging = false; });
+});
+
+// ═══════════════════════════════════════
+// SINCRONIZZAZIONE TESTO-AUDIO
+// Mappa ogni paragrafo a una frazione del tempo
+// proporzionale alla lunghezza del testo
+// ═══════════════════════════════════════
+let syncMap = [];
+let lastHighlightIdx = -1;
+
 function buildSyncMap(chapterIdx) {
   const ch = CHAPTERS[chapterIdx];
   const paras = ch.paragraphs;
-  // Calcola peso di ogni paragrafo in base alla lunghezza del testo
   const lengths = paras.map(p => p.text.length);
   const total = lengths.reduce((a, b) => a + b, 0);
-  // Costruisce array di soglie: a che frazione del tempo inizia ogni paragrafo
   let cumulative = 0;
-  const thresholds = lengths.map(l => {
+  // thresholds[i] = frazione [0,1] a cui inizia il paragrafo i
+  return lengths.map(l => {
     const t = cumulative / total;
     cumulative += l;
     return t;
   });
-  return thresholds;
 }
-
-let syncMap = [];
-let lastHighlightIdx = -1;
 
 function syncTextToAudio(t, d) {
   if (!d || d === 0) return;
@@ -1083,18 +1132,23 @@ function syncTextToAudio(t, d) {
   const ch = CHAPTERS[curChapter];
   const n = ch.paragraphs.length;
 
-  // Trova l'ultimo paragrafo la cui soglia è <= progress corrente
+  // Trova il paragrafo corrente: l'ultimo con soglia <= progress
   let pIdx = 0;
-  for (let i = 0; i < syncMap.length; i++) {
-    if (syncMap[i] <= progress) pIdx = i;
-    else break;
+  for (let i = syncMap.length - 1; i >= 0; i--) {
+    if (syncMap[i] <= progress) { pIdx = i; break; }
   }
   pIdx = Math.min(pIdx, n - 1);
 
   if (pIdx !== lastHighlightIdx) {
     lastHighlightIdx = pIdx;
     highlightPara(pIdx);
-    scrollToPara(pIdx);
+    // Scrolla solo se il paragrafo non è già visibile
+    const el = document.getElementById('p-' + pIdx);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const inView = rect.top >= 60 && rect.bottom <= window.innerHeight - 120;
+      if (!inView) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }
 }
 
